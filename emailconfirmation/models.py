@@ -1,13 +1,14 @@
 import datetime
 from random import random
+from hashlib import sha1
 
 from django.conf import settings
 from django.db import models, IntegrityError
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse, NoReverseMatch
 from django.template.loader import render_to_string
-from django.utils.hashcompat import sha_constructor
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from django.contrib.sites.models import Site
 
@@ -107,18 +108,9 @@ class EmailConfirmationManager(models.Manager):
     def generate_key(self, email):
         """
         Generate a new email confirmation key and return it.
-
-        The key is a hash of:
-           * time specific data
-           * the email address it's being generated for
-           * a random salt.
         """
-        payload = ''.join([
-            str(now()),
-            str(email),
-            sha_constructor(str(random())).hexdigest(),
-        ])
-        return sha_constructor(payload).hexdigest()
+        salt = sha1(str(random())).hexdigest()[:5]
+        return sha1(salt + email_address.email).hexdigest()
 
     def create_emailconfirmation(self, email_address):
         "Create an email confirmation obj from the given email address obj"
@@ -177,6 +169,7 @@ class EmailConfirmationManager(models.Manager):
         message = render_to_string(
             "emailconfirmation/email_confirmation_message.txt", context)
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email_address.email])
+
         email_confirmation_sent.send(
             sender=self.model,
             confirmation=confirmation,
@@ -201,7 +194,7 @@ class EmailConfirmation(models.Model):
         confirmation_days = getattr(settings, 'EMAIL_CONFIRMATION_DAYS', 7)
         expiration_date = self.created_at + datetime.timedelta(
                 days=confirmation_days)
-        return expiration_date <= now()
+        return expiration_date <= timezone.now()
     key_expired.boolean = True
     
     def __unicode__(self):
