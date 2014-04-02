@@ -110,7 +110,7 @@ class EmailConfirmationManager(models.Manager):
         Generate a new email confirmation key and return it.
         """
         salt = sha1(str(random())).hexdigest()[:5]
-        return sha1(salt + email_address.email).hexdigest()
+        return sha1(salt + email).hexdigest()
 
     def create_emailconfirmation(self, email_address):
         "Create an email confirmation obj from the given email address obj"
