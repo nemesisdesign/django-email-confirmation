@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="django-email-confirmation",
-    version="0.2",
+    version="0.3",
     description="Simple email confirmation for the Django web framework.",
     long_description=open("README.rst").read(),
     author="James Tauber",
